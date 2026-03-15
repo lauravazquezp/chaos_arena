@@ -80,10 +80,17 @@ func (l *Loop) tick(ctx context.Context) {
 		Status  string `json:"status"`
 		Attack  string `json:"attack,omitempty"`
 	}
+	type healthResult struct {
+		id      string
+		healthy bool
+	}
+	results := make([]healthResult, 0, len(serviceIDs))
 	findings := make([]finding, 0, len(serviceIDs))
 
+	// First pass: collect health checks and build findings snapshot.
 	for _, id := range serviceIDs {
 		healthy := l.checkHealth(id)
+		results = append(results, healthResult{id, healthy})
 
 		l.state.RLock()
 		svc, ok := l.state.Services[id]
@@ -101,13 +108,18 @@ func (l *Loop) tick(ctx context.Context) {
 		l.state.RUnlock()
 
 		findings = append(findings, f)
-		l.reconcileServiceWithResult(ctx, id, healthy)
 	}
 
+	// Broadcast the tick before acting so the log shows observations first.
 	l.hub.Broadcast(ws.Event{
 		Type:    ws.EventReconcilerTick,
 		Payload: findings,
 	})
+
+	// Second pass: apply diffs (may emit action events like "healing: running undo").
+	for _, r := range results {
+		l.reconcileServiceWithResult(ctx, r.id, r.healthy)
+	}
 }
 
 // reconcileServiceWithResult runs reconciliation for a service using a

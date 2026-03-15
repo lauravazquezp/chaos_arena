@@ -48,9 +48,16 @@ function reducer(state, action) {
         },
         events: [...state.events, event],
       }
-    case 'game.started':
+    case 'game.started': {
+      // Reset service statuses to unknown so stale health state from a
+      // previous game doesn't bleed into this one.
+      const resetServices = {}
+      for (const [id, svc] of Object.entries(state.services)) {
+        resetServices[id] = { ...svc, status: 'unknown', active_attack: null }
+      }
       return {
         ...state,
+        services:        resetServices,
         gameId:          action.payload.game_id,
         gameOver:        false,
         gameActive:      true,
@@ -58,6 +65,7 @@ function reducer(state, action) {
         durationSeconds: action.payload.duration_seconds,
         events:          [...state.events, event],
       }
+    }
     case 'game.ended':
       return { ...state, gameOver: true, gameActive: false, gameId: action.payload.game_id, events: [...state.events, event] }
     case 'reconciler.tick':

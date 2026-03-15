@@ -1,4 +1,4 @@
-reports/
+/reports/
 frontend/node_modules/
 frontend/dist/
 arena-service/node_modules/
