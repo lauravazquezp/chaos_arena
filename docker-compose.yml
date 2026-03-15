@@ -1,0 +1,41 @@
+services:
+  control-plane:
+    build: ./control-plane
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./reports:/app/reports
+      - ./arena.yaml:/app/arena.yaml
+    environment:
+      - ARENA_CONFIG=/app/arena.yaml
+      - REPORTS_DIR=/app/reports
+
+  service-a:
+    build: ./arena-service
+    cap_add: [NET_ADMIN]
+    environment:
+      - SERVICE_NAME=service-a
+      - UPSTREAM_URL=http://service-b:3000
+
+  service-b:
+    build: ./arena-service
+    cap_add: [NET_ADMIN]
+    environment:
+      - SERVICE_NAME=service-b
+      - UPSTREAM_URL=http://service-c:3000
+
+  service-c:
+    build: ./arena-service
+    cap_add: [NET_ADMIN]
+    environment:
+      - SERVICE_NAME=service-c
+      - UPSTREAM_URL=""
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_WS_URL=ws://localhost:8080/ws
+      - VITE_API_URL=http://localhost:8080
