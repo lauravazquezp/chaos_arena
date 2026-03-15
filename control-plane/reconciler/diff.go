@@ -28,6 +28,11 @@ func Diff(svc *arena.ServiceState, actualHealthy bool) DiffResult {
 		return DiffResult{Action: ActionNone}
 	}
 
+	// Initial/unknown state: service is responding, just initialize status silently.
+	if actualHealthy && svc.Status == arena.StatusUnknown && svc.ActiveAttack == nil {
+		return DiffResult{Action: ActionMarkHealed, EmitHealed: false}
+	}
+
 	// Provisioning → healthy: the Undo has taken effect.
 	if actualHealthy && svc.Status == arena.StatusProvisioning {
 		return DiffResult{Action: ActionMarkHealed, EmitHealed: true}

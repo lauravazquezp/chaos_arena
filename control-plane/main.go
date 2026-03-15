@@ -47,7 +47,7 @@ func main() {
 	m := metrics.NewMetrics()
 
 	dispatcher := attacks.NewDispatcher(dockerCli, state, hub)
-	router := api.NewRouter(state, dispatcher, hub, m, reportsDir)
+	router := api.NewRouter(state, dispatcher, hub, m, reportsDir, cfg.Game.DurationSeconds)
 
 	loop := reconciler.NewLoop(state, dockerCli, hub, m)
 	loop.OnHealed = router.OnHealed

@@ -206,19 +206,21 @@ func (l *Loop) applyDiff(ctx context.Context, serviceID string, svcCopy *arena.S
 		}
 		l.state.Unlock()
 
-		if l.metrics != nil {
+		if l.metrics != nil && result.EmitHealed {
 			l.metrics.IncrementHeals(serviceID, "healed")
 			l.metrics.SetMTTR(serviceID, mttrMs)
 		}
-		l.hub.Broadcast(ws.Event{
-			Type: ws.EventContainerHealthy,
-			Payload: map[string]interface{}{
-				"service": serviceID,
-				"attack":  string(attackType),
-				"mttr_ms": mttrMs,
-				"detail":  fmt.Sprintf("health check passed after %dms", mttrMs),
-			},
-		})
+		if result.EmitHealed {
+			l.hub.Broadcast(ws.Event{
+				Type: ws.EventContainerHealthy,
+				Payload: map[string]interface{}{
+					"service": serviceID,
+					"attack":  string(attackType),
+					"mttr_ms": mttrMs,
+					"detail":  fmt.Sprintf("health check passed after %dms", mttrMs),
+				},
+			})
+		}
 		if l.OnHealed != nil {
 			l.OnHealed(HealRecord{ServiceID: serviceID, AttackType: attackType, HealedAt: now, MTTRMs: mttrMs})
 		}

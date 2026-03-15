@@ -49,15 +49,31 @@ function reducer(state, action) {
         events: [...state.events, event],
       }
     case 'game.started':
-      return { ...state, gameId: action.payload.game_id, gameOver: false, gameActive: true, events: [...state.events, event] }
+      return {
+        ...state,
+        gameId:          action.payload.game_id,
+        gameOver:        false,
+        gameActive:      true,
+        startedAt:       action.payload.started_at,
+        durationSeconds: action.payload.duration_seconds,
+        events:          [...state.events, event],
+      }
     case 'game.ended':
       return { ...state, gameOver: true, gameActive: false, gameId: action.payload.game_id, events: [...state.events, event] }
+    case 'reconciler.tick':
+      // Only keep reconciler ticks while a game is running.
+      if (!state.gameActive) return state
+      return { ...state, events: [...state.events, event] }
     default:
       return { ...state, events: [...state.events, event] }
   }
 }
 
-const initialState = { services: {}, events: [], gameId: null, gameOver: false, gameActive: false }
+const initialState = {
+  services: {}, events: [], gameId: null,
+  gameOver: false, gameActive: false,
+  startedAt: null, durationSeconds: 60,
+}
 
 export function useWebSocket(url) {
   const [state, dispatch] = useReducer(reducer, initialState)

@@ -3,6 +3,7 @@ import Graph from './Graph.jsx'
 import EventLog from './EventLog.jsx'
 import PostMortem from './PostMortem.jsx'
 import { useWebSocket } from './useWebSocket.js'
+import GameTimer from './GameTimer.jsx'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 const WS_URL  = import.meta.env.VITE_WS_URL  || 'ws://localhost:8080/ws'
@@ -18,7 +19,7 @@ const TOPOLOGY      = SERVICE_IDS.map((id) => ({
 const IDLE = {}
 
 export default function App() {
-  const { services, events, gameId, gameOver, gameActive, injectEvent, clearLog } = useWebSocket(WS_URL)
+  const { services, events, gameId, gameOver, gameActive, startedAt, durationSeconds, injectEvent, clearLog } = useWebSocket(WS_URL)
   const [gameRunning, setGameRunning] = useState(false)
   const [pending, setPending]         = useState(IDLE) // { "service-b:kill_switch": true }
 
@@ -72,6 +73,9 @@ export default function App() {
         <div style={styles.graphArea}>
           <Graph services={services} topology={TOPOLOGY} gameActive={gameActive} />
           <div style={styles.graphTitle}>CHAOS ARENA</div>
+          <div style={styles.timerOverlay}>
+            <GameTimer gameActive={gameActive} startedAt={startedAt} durationSeconds={durationSeconds} />
+          </div>
         </div>
 
         {/* Bottom row */}
@@ -173,6 +177,11 @@ const styles = {
     fontSize:      11,
     letterSpacing: 4,
     fontWeight:    'bold',
+  },
+  timerOverlay: {
+    position:   'absolute',
+    top:        10,
+    right:      16,
   },
   bottom: {
     flex:     1,

@@ -18,11 +18,12 @@ import (
 )
 
 type Router struct {
-	state      *arena.ArenaState
-	dispatcher *attacks.Dispatcher
-	hub        *ws.Hub
-	metrics    *metrics.Metrics
-	reportsDir string
+	state        *arena.ArenaState
+	dispatcher   *attacks.Dispatcher
+	hub          *ws.Hub
+	metrics      *metrics.Metrics
+	reportsDir   string
+	gameDuration int // seconds, from arena.yaml
 
 	mu sync.Mutex
 	// current game
@@ -40,15 +41,17 @@ func NewRouter(
 	hub *ws.Hub,
 	m *metrics.Metrics,
 	reportsDir string,
+	gameDuration int,
 ) *Router {
 	return &Router{
-		state:      state,
-		dispatcher: dispatcher,
-		hub:        hub,
-		metrics:    m,
-		reportsDir: reportsDir,
-		gameEvents: []reports.GameEvent{},
-		inFlight:   make(map[string]reports.GameEvent),
+		state:        state,
+		dispatcher:   dispatcher,
+		hub:          hub,
+		metrics:      m,
+		reportsDir:   reportsDir,
+		gameDuration: gameDuration,
+		gameEvents:   []reports.GameEvent{},
+		inFlight:     make(map[string]reports.GameEvent),
 	}
 }
 
@@ -118,8 +121,12 @@ func (r *Router) handleGameStart(w http.ResponseWriter, req *http.Request) {
 	r.inFlight = make(map[string]reports.GameEvent)
 
 	r.hub.Broadcast(ws.Event{
-		Type:    ws.EventGameStarted,
-		Payload: map[string]string{"game_id": r.gameID},
+		Type: ws.EventGameStarted,
+		Payload: map[string]interface{}{
+			"game_id":          r.gameID,
+			"started_at":       r.gameStart.UTC().Format(time.RFC3339Nano),
+			"duration_seconds": r.gameDuration,
+		},
 	})
 
 	writeJSON(w, http.StatusOK, map[string]string{"game_id": r.gameID})
