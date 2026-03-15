@@ -10,10 +10,18 @@ curl -sf -X POST http://localhost:8080/attack \
   -H "Content-Type: application/json" \
   -d '{"service":"service-b","attack":"kill_switch"}'
 
-# Poll until service-b is healthy again (max 30s)
-for i in $(seq 1 30); do
+# Wait for service-b to become unhealthy (reconciler detects the stopped container)
+for i in $(seq 1 15); do
   STATUS=$(curl -sf http://localhost:8080/game/state | jq -r '.services["service-b"].status')
   echo "Tick $i: service-b = $STATUS"
+  if [ "$STATUS" != "healthy" ]; then break; fi
+  sleep 1
+done
+
+# Wait for service-b to recover
+for i in $(seq 1 30); do
+  STATUS=$(curl -sf http://localhost:8080/game/state | jq -r '.services["service-b"].status')
+  echo "Recovery tick $i: service-b = $STATUS"
   if [ "$STATUS" = "healthy" ]; then break; fi
   sleep 1
 done
