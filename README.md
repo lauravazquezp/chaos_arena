@@ -50,8 +50,8 @@ make up
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/game/start` | Start a session → `{ "game_id": "..." }` |
-| `POST` | `/game/stop` | End session, write post-mortem → report JSON |
+| `POST` | `/game/start` | Start a simulation → `{ "game_id": "..." }` |
+| `POST` | `/game/stop` | End simulation, write post-mortem → report JSON |
 | `GET` | `/game/state` | Current arena state |
 | `POST` | `/attack` | `{ "service": "service-b", "attack": "kill_switch" }` |
 | `GET` | `/reports` | List report filenames |
@@ -71,16 +71,71 @@ make up
 
 ## Grafana overlay
 
+### Start
+
 ```bash
 make grafana
 ```
 
 - Prometheus: http://localhost:9090
-- Grafana: http://localhost:3001 (admin / admin)
+- Grafana: http://localhost:3001 — credentials: `admin` / `admin`
+
+> This is a local Docker container, not grafana.com. Use the credentials above regardless of any cloud account.
+
+### Connect Prometheus as a data source
+
+1. Open http://localhost:3001 and log in.
+2. Go to **Connections → Data sources → Add new data source**.
+3. Select **Prometheus**.
+4. Set the URL to `http://prometheus:9090` (use the Docker service name, not localhost).
+5. Click **Save & test** — you should see "Successfully queried the Prometheus API".
+
+### Available metrics
+
+All metrics are exposed at `http://localhost:8080/metrics` and scraped by Prometheus every 5 seconds.
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `chaos_arena_attacks_total` | Counter | `service`, `attack_type` | Total attacks dispatched per service and attack type |
+| `chaos_arena_heals_total` | Counter | `service`, `outcome` | Total heal attempts; `outcome="healed"` means the reconciler confirmed recovery |
+| `chaos_arena_mttr_milliseconds` | Gauge | `service` | Last observed mean-time-to-recover in ms for each service |
+| `chaos_arena_services_healthy` | Gauge | — | Number of services currently passing their health check |
+
+### Useful PromQL queries
+
+Paste these into **Explore** (select the Prometheus datasource first):
+
+```promql
+# Total attacks by type across all services
+sum by (attack_type) (chaos_arena_attacks_total)
+
+# Successful heals per service
+chaos_arena_heals_total{outcome="healed"}
+
+# MTTR trend over time (requires multiple data points)
+chaos_arena_mttr_milliseconds
+
+# Services healthy right now
+chaos_arena_services_healthy
+
+# Attack rate over a sliding 5-minute window
+rate(chaos_arena_attacks_total[5m])
+```
+
+### Building a dashboard
+
+1. Go to **Dashboards → New → New dashboard → Add visualization**.
+2. Select the Prometheus datasource.
+3. Use the queries above as panel metrics.
+4. Recommended panels:
+   - **Stat** — `chaos_arena_services_healthy` (big number, green/red threshold at 3)
+   - **Time series** — `chaos_arena_attacks_total` with `rate([1m])` to see attack bursts
+   - **Bar chart** — `sum by (service) (chaos_arena_heals_total{outcome="healed"})` for per-service heal counts
+   - **Stat** — `chaos_arena_mttr_milliseconds` per service to compare recovery speed
 
 ## Configuration
 
-Edit `arena.yaml` to change the service topology, game duration, and scheduled auto-attacks.
+Edit `arena.yaml` to change the service topology, simulation duration, and scheduled auto-attacks.
 
 ```yaml
 game:

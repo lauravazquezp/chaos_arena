@@ -74,7 +74,7 @@ export default function App() {
           <Graph services={services} topology={TOPOLOGY} gameActive={gameActive} />
           <div style={styles.graphTitle}>CHAOS ARENA</div>
           <div style={styles.timerOverlay}>
-            <GameTimer gameActive={gameActive} startedAt={startedAt} durationSeconds={durationSeconds} />
+            <GameTimer gameActive={gameActive} startedAt={startedAt} durationSeconds={durationSeconds} onExpire={stopGame} />
           </div>
         </div>
 
@@ -89,7 +89,7 @@ export default function App() {
               <>
                 <PostMortem gameId={gameId} />
                 <button style={{ ...styles.btn, background: '#22c55e', marginTop: 8, width: '100%' }} onClick={restartGame}>
-                  New Game
+                  New Simulation
                 </button>
               </>
             ) : (
@@ -191,12 +191,14 @@ const styles = {
     overflow: 'hidden',
   },
   eventLogArea: {
-    flex:     '0 0 55%',
-    overflow: 'hidden',
+    flex:      '0 0 55%',
+    overflow:  'hidden',
+    minHeight: 0,
   },
   controlsArea: {
     flex:      1,
     overflowY: 'auto',
+    minHeight: 0,
   },
   controls: {
     background:   '#0f172a',

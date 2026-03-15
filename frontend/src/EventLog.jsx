@@ -7,8 +7,8 @@ const EVENT_LABELS = {
   'container.provisioning': 'healing: running undo',
   'container.healthy':      'recovered',
   'control_plane.error':    'control-plane error',
-  'game.started':           'game started',
-  'game.ended':             'game ended',
+  'game.started':           'simulation started',
+  'game.ended':             'simulation ended',
   'attack.dispatched':      'attack dispatched (pending)',
 }
 
@@ -47,14 +47,16 @@ export default function EventLog({ events }) {
 
 function ReconcilerTick({ event }) {
   const findings = Array.isArray(event.payload) ? event.payload : []
+  const allHealthy = findings.length > 0 && findings.every((f) => f.healthy && !f.attack)
   return (
     <div style={{ marginBottom: 6, borderLeft: '2px solid #1e3a5f', paddingLeft: 8 }}>
       <div style={{ color: '#334155' }}>
         <span style={{ color: '#1e3a5f' }}>[{(event.timestamp || '').slice(11, 23)}]</span>
         {' '}
         <span style={{ color: '#2563eb' }}>reconciler tick</span>
+        {allHealthy && <span style={{ color: '#166534' }}> — all services healthy</span>}
       </div>
-      {findings.map((f) => (
+      {!allHealthy && findings.map((f) => (
         <div key={f.service} style={{ paddingLeft: 12, marginTop: 2 }}>
           <span style={{ color: '#475569' }}>{f.service}</span>
           {' '}

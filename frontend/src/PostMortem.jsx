@@ -19,7 +19,7 @@ export default function PostMortem({ gameId }) {
 
   return (
     <div style={containerStyle}>
-      <h2 style={{ color: '#e2e8f0', marginBottom: 12 }}>Post-Mortem: {report.game_id}</h2>
+      <h2 style={{ color: '#e2e8f0', marginBottom: 12 }}>Post-Mortem: {report.game_id.slice(0, 8)}</h2>
       <div style={{ color: '#94a3b8', marginBottom: 16, fontSize: 13 }}>
         {new Date(report.started_at).toLocaleTimeString()} → {new Date(report.ended_at).toLocaleTimeString()}
       </div>

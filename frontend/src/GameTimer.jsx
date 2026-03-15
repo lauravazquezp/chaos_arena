@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-export default function GameTimer({ gameActive, startedAt, durationSeconds }) {
+export default function GameTimer({ gameActive, startedAt, durationSeconds, onExpire }) {
   const [remaining, setRemaining] = useState(null)
+  const expiredRef = useRef(false)
 
   useEffect(() => {
     if (!gameActive || !startedAt) {
       setRemaining(null)
+      expiredRef.current = false
       return
     }
 
@@ -13,6 +15,10 @@ export default function GameTimer({ gameActive, startedAt, durationSeconds }) {
       const elapsed = (Date.now() - new Date(startedAt).getTime()) / 1000
       const left = Math.max(0, durationSeconds - elapsed)
       setRemaining(left)
+      if (left === 0 && !expiredRef.current) {
+        expiredRef.current = true
+        onExpire?.()
+      }
     }
 
     update()
