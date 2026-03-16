@@ -19,6 +19,8 @@ const (
 	EventGameStarted           EventType = "game.started"
 	EventGameEnded             EventType = "game.ended"
 	EventReconcilerTick        EventType = "reconciler.tick"
+	EventHealFailed            EventType = "heal.failed"
+	EventSimConfig             EventType = "simulation.config"
 )
 
 type Event struct {

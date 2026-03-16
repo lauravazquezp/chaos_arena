@@ -1,22 +1,22 @@
 arena:
   name: "three-tier-web"
   services:
-    - id: service-a
-      depends_on: [service-b]
-    - id: service-b
-      depends_on: [service-c]
-    - id: service-c
+    - id: api-gateway
+      depends_on: [auth-service]
+    - id: auth-service
+      depends_on: [payments]
+    - id: payments
       depends_on: []
 
 game:
   duration_seconds: 60
   auto_attacks:
     - at_second: 10
-      service: service-b
+      service: auth-service
       attack: kill_switch
     - at_second: 25
-      service: service-c
+      service: payments
       attack: latency_spike
     - at_second: 40
-      service: service-b
+      service: auth-service
       attack: black_hole

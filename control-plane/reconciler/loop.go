@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/chaos-arena/control-plane/arena"
@@ -37,6 +39,21 @@ type Loop struct {
 
 	// OnHealed is called (from the loop goroutine) each time a service is confirmed healthy.
 	OnHealed func(HealRecord)
+
+	// healFailureProb stores probability * 10000 as an atomic uint32.
+	healFailureProb uint32
+}
+
+// SetHealFailureProbability sets the probability (0.0–0.8) that a heal attempt
+// is skipped on a given reconciler tick, causing the service to stay unhealthy.
+func (l *Loop) SetHealFailureProbability(p float64) {
+	if p < 0 {
+		p = 0
+	}
+	if p > 0.8 {
+		p = 0.8
+	}
+	atomic.StoreUint32(&l.healFailureProb, uint32(p*10000))
 }
 
 func NewLoop(s *arena.ArenaState, d *docker.DockerClient, h *ws.Hub, m *metrics.Metrics) *Loop {
@@ -162,6 +179,23 @@ func (l *Loop) applyDiff(ctx context.Context, serviceID string, svcCopy *arena.S
 
 	case ActionUndo:
 		if result.AttackType == nil {
+			return
+		}
+		// Probabilistic heal failure: skip this undo attempt and let the
+		// reconciler retry on the next tick, keeping the service unhealthy longer.
+		prob := atomic.LoadUint32(&l.healFailureProb)
+		if prob > 0 && rand.Float64() < float64(prob)/10000.0 {
+			l.hub.Broadcast(ws.Event{
+				Type: ws.EventHealFailed,
+				Payload: map[string]string{
+					"service": serviceID,
+					"attack":  string(*result.AttackType),
+					"detail":  "undo attempt failed — will retry next tick",
+				},
+			})
+			if l.metrics != nil {
+				l.metrics.IncrementHeals(serviceID, "failed")
+			}
 			return
 		}
 		containerID := svcCopy.ContainerID

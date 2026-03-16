@@ -8,20 +8,20 @@ echo "Game started: $GAME"
 
 curl -sf -X POST http://localhost:8080/attack \
   -H "Content-Type: application/json" \
-  -d '{"service":"service-b","attack":"kill_switch"}'
+  -d '{"service":"auth-service","attack":"kill_switch"}'
 
-# Wait for service-b to become unhealthy (reconciler detects the stopped container)
+# Wait for auth-service to become unhealthy (reconciler detects the stopped container)
 for i in $(seq 1 15); do
-  STATUS=$(curl -sf http://localhost:8080/game/state | jq -r '.services["service-b"].status')
-  echo "Tick $i: service-b = $STATUS"
+  STATUS=$(curl -sf http://localhost:8080/game/state | jq -r '.services["auth-service"].status')
+  echo "Tick $i: auth-service = $STATUS"
   if [ "$STATUS" != "healthy" ]; then break; fi
   sleep 1
 done
 
-# Wait for service-b to recover
+# Wait for auth-service to recover
 for i in $(seq 1 30); do
-  STATUS=$(curl -sf http://localhost:8080/game/state | jq -r '.services["service-b"].status')
-  echo "Recovery tick $i: service-b = $STATUS"
+  STATUS=$(curl -sf http://localhost:8080/game/state | jq -r '.services["auth-service"].status')
+  echo "Recovery tick $i: auth-service = $STATUS"
   if [ "$STATUS" = "healthy" ]; then break; fi
   sleep 1
 done

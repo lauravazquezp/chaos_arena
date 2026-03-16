@@ -6,6 +6,7 @@ const EVENT_LABELS = {
   'container.dying':        'attack active',
   'container.provisioning': 'healing: running undo',
   'container.healthy':      'recovered',
+  'heal.failed':            'heal attempt failed — retrying',
   'control_plane.error':    'control-plane error',
   'game.started':           'simulation started',
   'game.ended':             'simulation ended',
@@ -25,22 +26,25 @@ export default function EventLog({ events }) {
       background: '#0f172a',
       border: '1px solid #1e293b',
       borderRadius: 8,
-      padding: 12,
       height: '100%',
-      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
       fontFamily: 'monospace',
       fontSize: 12,
       color: '#94a3b8',
+      overflow: 'hidden',
     }}>
-      <div style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: 8 }}>Event Log</div>
-      {displayed.length === 0 && (
-        <div style={{ color: '#334155' }}>Waiting for events…</div>
-      )}
-      {displayed.map((e, i) => {
-        if (e.type === 'reconciler.tick') return <ReconcilerTick key={i} event={e} />
-        return <RegularEvent key={i} event={e} />
-      })}
-      <div ref={bottomRef} />
+      <div style={{ fontWeight: 'bold', color: '#e2e8f0', padding: '10px 12px 6px', flexShrink: 0 }}>Event Log</div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px 12px' }}>
+        {displayed.length === 0 && (
+          <div style={{ color: '#334155' }}>Waiting for events…</div>
+        )}
+        {displayed.map((e, i) => {
+          if (e.type === 'reconciler.tick') return <ReconcilerTick key={i} event={e} />
+          return <RegularEvent key={i} event={e} />
+        })}
+        <div ref={bottomRef} />
+      </div>
     </div>
   )
 }

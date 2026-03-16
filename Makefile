@@ -1,4 +1,4 @@
-.PHONY: up down build test smoke logs clean free-ports
+.PHONY: up down rebuild build test smoke logs clean free-ports
 
 up: free-ports
 	docker compose up --build -d
@@ -17,6 +17,9 @@ free-ports:
 			fi; \
 		fi; \
 	done
+
+rebuild:
+	docker compose up --build -d --remove-orphans
 
 down:
 	docker compose down

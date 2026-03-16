@@ -72,6 +72,14 @@ function reducer(state, action) {
       // Only keep reconciler ticks while a game is running.
       if (!state.gameActive) return state
       return { ...state, events: [...state.events, event] }
+    case 'simulation.config': {
+      // Rebuild services map to match the new service list.
+      const newServices = {}
+      for (const id of (action.payload.services || [])) {
+        newServices[id] = state.services[id] || { id, status: 'unknown', active_attack: null }
+      }
+      return { ...state, simConfig: action.payload, services: newServices }
+    }
     default:
       return { ...state, events: [...state.events, event] }
   }
@@ -81,6 +89,7 @@ const initialState = {
   services: {}, events: [], gameId: null,
   gameOver: false, gameActive: false,
   startedAt: null, durationSeconds: 60,
+  simConfig: null,
 }
 
 export function useWebSocket(url) {

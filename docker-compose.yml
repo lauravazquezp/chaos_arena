@@ -11,25 +11,39 @@ services:
       - ARENA_CONFIG=/app/arena.yaml
       - REPORTS_DIR=/app/reports
 
-  service-a:
+  api-gateway:
     build: ./arena-service
     cap_add: [NET_ADMIN]
     environment:
-      - SERVICE_NAME=service-a
-      - UPSTREAM_URL=http://service-b:3000
+      - SERVICE_NAME=api-gateway
+      - UPSTREAM_URL=http://auth-service:3000
 
-  service-b:
+  auth-service:
     build: ./arena-service
     cap_add: [NET_ADMIN]
     environment:
-      - SERVICE_NAME=service-b
-      - UPSTREAM_URL=http://service-c:3000
+      - SERVICE_NAME=auth-service
+      - UPSTREAM_URL=http://payments:3000
 
-  service-c:
+  payments:
     build: ./arena-service
     cap_add: [NET_ADMIN]
     environment:
-      - SERVICE_NAME=service-c
+      - SERVICE_NAME=payments
+      - UPSTREAM_URL=""
+
+  cache:
+    build: ./arena-service
+    cap_add: [NET_ADMIN]
+    environment:
+      - SERVICE_NAME=cache
+      - UPSTREAM_URL=""
+
+  worker:
+    build: ./arena-service
+    cap_add: [NET_ADMIN]
+    environment:
+      - SERVICE_NAME=worker
       - UPSTREAM_URL=""
 
   frontend:

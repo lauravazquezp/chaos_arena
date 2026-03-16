@@ -46,11 +46,27 @@ func main() {
 	hub := ws.NewHub()
 	m := metrics.NewMetrics()
 
+	// Build default SimConfig from arena.yaml.
+	defaultServices := make([]string, 0, len(cfg.Arena.Services))
+	defaultDeps := [][]string{}
+	for _, svc := range cfg.Arena.Services {
+		defaultServices = append(defaultServices, svc.ID)
+		for _, dep := range svc.DependsOn {
+			defaultDeps = append(defaultDeps, []string{svc.ID, dep})
+		}
+	}
+	defaultConfig := api.SimConfig{
+		Services:               defaultServices,
+		Dependencies:           defaultDeps,
+		HealFailureProbability: 0.0,
+	}
+
 	dispatcher := attacks.NewDispatcher(dockerCli, state, hub)
-	router := api.NewRouter(state, dispatcher, hub, m, reportsDir, cfg.Game.DurationSeconds)
+	router := api.NewRouter(state, dispatcher, hub, m, reportsDir, cfg.Game.DurationSeconds, defaultConfig)
 
 	loop := reconciler.NewLoop(state, dockerCli, hub, m)
 	loop.OnHealed = router.OnHealed
+	router.SetHealFailureProbability = loop.SetHealFailureProbability
 	ctx := context.Background()
 	go loop.Run(ctx)
 
